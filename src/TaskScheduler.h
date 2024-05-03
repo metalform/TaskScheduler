@@ -276,7 +276,7 @@ extern "C" {
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
 #include "TaskSchedulerSleepMethods.h"
 
-  Scheduler* iSleepScheduler;
+  SchedulerMF* iSleepScheduler;
   SleepCallback iSleepMethod;
 
 #endif  // _TASK_SLEEP_ON_IDLE_RUN
@@ -294,7 +294,7 @@ extern "C" {
 #endif  // _TASK_WDT_IDS
 
 #ifdef _TASK_PRIORITY
-    Scheduler* iCurrentScheduler;
+    SchedulerMF* iCurrentScheduler;
 #endif // _TASK_PRIORITY
 
 
@@ -309,7 +309,7 @@ static uint32_t _task_micros() {return micros();}
  * so could be called with no parameters.
  */
 #ifdef _TASK_OO_CALLBACKS
-Task::Task( unsigned long aInterval, long aIterations, Scheduler* aScheduler, bool aEnable
+Task::Task( unsigned long aInterval, long aIterations, SchedulerMF* aScheduler, bool aEnable
 #ifdef _TASK_SELF_DESTRUCT
 , bool aSelfDestruct ) {
 #else 
@@ -318,7 +318,7 @@ Task::Task( unsigned long aInterval, long aIterations, Scheduler* aScheduler, bo
     reset();
     set(aInterval, aIterations);
 #else
-Task::Task( unsigned long aInterval, long aIterations, TaskCallback aCallback, Scheduler* aScheduler, bool aEnable, TaskOnEnable aOnEnable, TaskOnDisable aOnDisable
+Task::Task( unsigned long aInterval, long aIterations, TaskCallback aCallback, SchedulerMF* aScheduler, bool aEnable, TaskOnEnable aOnEnable, TaskOnDisable aOnDisable
 #ifdef _TASK_SELF_DESTRUCT
 , bool aSelfDestruct ) {
 #else
@@ -359,11 +359,11 @@ Task::~Task() {
 
 
 #ifdef _TASK_OO_CALLBACKS
-Task::Task( Scheduler* aScheduler ) {
+Task::Task( SchedulerMF* aScheduler ) {
     reset();
     set(TASK_IMMEDIATE, TASK_ONCE);
 #else
-Task::Task( TaskCallback aCallback, Scheduler* aScheduler, TaskOnEnable aOnEnable, TaskOnDisable aOnDisable ) {
+Task::Task( TaskCallback aCallback, SchedulerMF* aScheduler, TaskOnEnable aOnEnable, TaskOnDisable aOnDisable ) {
     reset();
     set(TASK_IMMEDIATE, TASK_ONCE, aCallback, aOnEnable, aOnDisable);
 #endif // _TASK_OO_CALLBACKS
@@ -994,7 +994,7 @@ void* Task::getLtsPointer() { return iLTS; }
 /** Default constructor.
  * Creates a scheduler with an empty execution chain.
  */
-Scheduler::Scheduler() {
+SchedulerMF::SchedulerMF() {
     init();
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
     setSleepMethod(&SleepMethod);
@@ -1010,7 +1010,7 @@ Scheduler::~Scheduler() {
 
 /** Initializes all internal varaibles
  */
-void Scheduler::init() {
+void SchedulerMF::init() {
     iEnabled = false;
     
     iFirst = NULL;
@@ -1038,7 +1038,7 @@ void Scheduler::init() {
  * @param &aTask - reference to the Task to be appended.
  * @note Task can only be part of the chain once.
  */
- void Scheduler::addTask(Task& aTask) {
+ void SchedulerMF::addTask(Task& aTask) {
 // If task already belongs to a scheduler, we should not be adding
 // it to this scheduler. It should be deleted from the other scheduler first. 
     if (aTask.iScheduler != NULL)
@@ -1067,7 +1067,7 @@ void Scheduler::init() {
 /** Deletes specific Task from the execution chain
  * @param &aTask - reference to the task to be deleted from the chain
  */
-void Scheduler::deleteTask(Task& aTask) {
+void SchedulerMF::deleteTask(Task& aTask) {
 // Can only delete own tasks
     if (aTask.iScheduler != this) 
         return;
@@ -1113,9 +1113,9 @@ void Scheduler::deleteTask(Task& aTask) {
  * @param aRecursive - if true, tasks of the higher priority chains are disabled as well recursively
  */
 #ifdef _TASK_PRIORITY
-void Scheduler::disableAll(bool aRecursive) {
+void SchedulerMF::disableAll(bool aRecursive) {
 #else
-void Scheduler::disableAll() {
+void SchedulerMF::disableAll() {
 #endif
 
     iEnabled = false;
@@ -1143,9 +1143,9 @@ void Scheduler::disableAll() {
  * @param aRecursive - if true, tasks of the higher priority chains are enabled as well recursively
  */
 #ifdef _TASK_PRIORITY
-void Scheduler::enableAll(bool aRecursive) {
+void SchedulerMF::enableAll(bool aRecursive) {
 #else
-void Scheduler::enableAll() {
+void SchedulerMF::enableAll() {
 #endif    
 
     iEnabled = false;
@@ -1167,7 +1167,7 @@ void Scheduler::enableAll() {
  * @param aScheduler - pointer to a scheduler for the higher priority tasks
  */
 #ifdef _TASK_PRIORITY
-void Scheduler::setHighPriorityScheduler(Scheduler* aScheduler) {
+void SchedulerMF::setHighPriorityScheduler(SchedulerMF* aScheduler) {
     if (aScheduler != this) iHighPriority = aScheduler;  // Setting yourself as a higher priority one will create infinite recursive call
 
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
@@ -1181,16 +1181,16 @@ void Scheduler::setHighPriorityScheduler(Scheduler* aScheduler) {
 
 
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
-void Scheduler::allowSleep(bool aState) {
+void SchedulerMF::allowSleep(bool aState) {
     iAllowSleep = aState;
 }
 #endif  // _TASK_SLEEP_ON_IDLE_RUN
 
 
 #ifdef _TASK_PRIORITY
-void Scheduler::startNow( bool aRecursive ) {
+void SchedulerMF::startNow( bool aRecursive ) {
 #else
-void Scheduler::startNow() {
+void SchedulerMF::startNow() {
 #endif
     unsigned long t = _TASK_TIME_FUNCTION();
 
@@ -1213,7 +1213,7 @@ void Scheduler::startNow() {
  *
  * @param aTask - reference to task which next iteration is in question
  */
-long Scheduler::timeUntilNextIteration(Task& aTask) {
+long SchedulerMF::timeUntilNextIteration(Task& aTask) {
 
 #ifdef _TASK_STATUS_REQUEST
 
@@ -1232,31 +1232,31 @@ long Scheduler::timeUntilNextIteration(Task& aTask) {
 }
 
 
-Task& Scheduler::currentTask() { return *iCurrent; }      // DEPRICATED. Use the next one instead
-Task* Scheduler::getCurrentTask() { return iCurrent; }
+Task& SchedulerMF::currentTask() { return *iCurrent; }      // DEPRICATED. Use the next one instead
+Task* SchedulerMF::getCurrentTask() { return iCurrent; }
 
 #ifdef _TASK_LTS_POINTER
-void* Scheduler::currentLts() { return iCurrent->iLTS; }
+void* SchedulerMF::currentLts() { return iCurrent->iLTS; }
 #endif  // _TASK_LTS_POINTER
 
 #ifdef _TASK_TIMECRITICAL
-bool Scheduler::isOverrun() { return (iCurrent->iOverrun < 0); }
+bool SchedulerMF::isOverrun() { return (iCurrent->iOverrun < 0); }
 
-void Scheduler::cpuLoadReset() {
+void SchedulerMF::cpuLoadReset() {
     iCPUStart = micros();
     iCPUCycle = 0;
     iCPUIdle = 0;
 }
 
 
-unsigned long Scheduler::getCpuLoadTotal() {
+unsigned long SchedulerMF::getCpuLoadTotal() {
     return (micros() - iCPUStart);
 }
 #endif  // _TASK_TIMECRITICAL
 
     
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
-void  Scheduler::setSleepMethod( SleepCallback aCallback ) {
+void  SchedulerMF::setSleepMethod( SleepCallback aCallback ) {
     if ( aCallback != NULL ) {
         iSleepScheduler = this;
         iSleepMethod = aCallback;
@@ -1272,7 +1272,7 @@ void  Scheduler::setSleepMethod( SleepCallback aCallback ) {
  * by running task more frequently
  */
 
-bool Scheduler::execute() {
+bool SchedulerMF::execute() {
   
     bool     idleRun = true;
     unsigned long m, i;  // millis, interval;
