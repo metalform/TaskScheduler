@@ -30,7 +30,7 @@
 // #define _TASK_THREAD_SAFE        // Enable additional checking for thread safety
 // #define _TASK_SELF_DESTRUCT      // Enable tasks to "self-destruct" after disable
 
-class Scheduler;
+class SchedulerMF;
 
 #define TASK_SCHEDULE       0   // default
 #define TASK_SCHEDULE_NC    1   // schedule + no catch-ups (always in the future)
@@ -51,7 +51,7 @@ class Scheduler;
 #endif
 
 #ifdef _TASK_PRIORITY
-    extern Scheduler* iCurrentScheduler;
+    extern SchedulerMF* iCurrentScheduler;
 #endif // _TASK_PRIORITY
 
 #ifdef _TASK_INLINE
@@ -93,7 +93,7 @@ class Scheduler;
 #define _TASK_SR_DELAY      2
 
 class StatusRequest {
-  friend class Scheduler;
+  friend class SchedulerMF;
   public:
     INLINE StatusRequest();
     INLINE void setWaiting(unsigned int aCount = 1);
@@ -137,7 +137,7 @@ typedef bool (*TaskOnEnable)();
 #ifdef _TASK_SLEEP_ON_IDLE_RUN
   typedef void (*SleepCallback)( unsigned long aDuration );
 
-  extern Scheduler* iSleepScheduler;
+  extern SchedulerMF* iSleepScheduler;
   extern SleepCallback iSleepMethod;
 #endif  // _TASK_SLEEP_ON_IDLE_RUN
 
@@ -160,18 +160,18 @@ typedef struct  {
 
 
 class Task {
-  friend class Scheduler;
+  friend class SchedulerMF;
   public:
 
 #ifdef _TASK_OO_CALLBACKS
-    INLINE Task(unsigned long aInterval=0, long aIterations=0, Scheduler* aScheduler=NULL, bool aEnable=false
+    INLINE Task(unsigned long aInterval=0, long aIterations=0, SchedulerMF* aScheduler=NULL, bool aEnable=false
 #ifdef _TASK_SELF_DESTRUCT
     , bool aSelfDestruct=false);
 #else
     );
 #endif  // #ifdef _TASK_SELF_DESTRUCT
 #else
-    INLINE Task(unsigned long aInterval=0, long aIterations=0, TaskCallback aCallback=NULL, Scheduler* aScheduler=NULL, bool aEnable=false, TaskOnEnable aOnEnable=NULL, TaskOnDisable aOnDisable=NULL
+    INLINE Task(unsigned long aInterval=0, long aIterations=0, TaskCallback aCallback=NULL, SchedulerMF* aScheduler=NULL, bool aEnable=false, TaskOnEnable aOnEnable=NULL, TaskOnDisable aOnDisable=NULL
 #ifdef _TASK_SELF_DESTRUCT
   , bool aSelfDestruct=false);
 #else
@@ -183,10 +183,10 @@ class Task {
 #ifdef _TASK_STATUS_REQUEST
 #ifdef _TASK_OO_CALLBACKS
 //    INLINE Task(Scheduler* aScheduler=NULL);
-    INLINE Task(Scheduler* aScheduler);
+    INLINE Task(SchedulerMF* aScheduler);
 #else
 //    INLINE Task(TaskCallback aCallback=NULL, Scheduler* aScheduler=NULL, TaskOnEnable aOnEnable=NULL, TaskOnDisable aOnDisable=NULL);
-    INLINE Task(TaskCallback aCallback, Scheduler* aScheduler, TaskOnEnable aOnEnable=NULL, TaskOnDisable aOnDisable=NULL);
+    INLINE Task(TaskCallback aCallback, SchedulerMF* aScheduler, TaskOnEnable aOnEnable=NULL, TaskOnDisable aOnDisable=NULL);
 #endif // _TASK_OO_CALLBACKS
 #endif  // _TASK_STATUS_REQUEST
 
@@ -309,7 +309,7 @@ class Task {
 #endif // _TASK_OO_CALLBACKS
 
     Task                     *iPrev, *iNext;         // pointers to the previous and next tasks in the chain
-    Scheduler                *iScheduler;            // pointer to the current scheduler
+    SchedulerMF                *iScheduler;            // pointer to the current scheduler
 
 #ifdef _TASK_STATUS_REQUEST
     StatusRequest            *iStatusRequest;        // pointer to the status request task is or was waiting on
@@ -336,10 +336,10 @@ class Task {
 #endif
 };
 
-class Scheduler {
+class SchedulerMF {
   friend class Task;
   public:
-    INLINE Scheduler();
+    INLINE SchedulerMF();
 //  ~Scheduler();
     INLINE void init();
     INLINE void addTask(Task& aTask);
@@ -380,8 +380,8 @@ class Scheduler {
 #endif  // _TASK_TIMECRITICAL
 
 #ifdef _TASK_PRIORITY
-    INLINE void setHighPriorityScheduler(Scheduler* aScheduler);
-    INLINE static Scheduler& currentScheduler() { return *(iCurrentScheduler); };
+    INLINE void setHighPriorityScheduler(SchedulerMF* aScheduler);
+    INLINE static SchedulerMF& currentScheduler() { return *(iCurrentScheduler); };
 #endif  // _TASK_PRIORITY
 
 #ifdef _TASK_EXPOSE_CHAIN
@@ -398,7 +398,7 @@ class Scheduler {
 #endif  // _TASK_SLEEP_ON_IDLE_RUN
 
 #ifdef _TASK_PRIORITY
-    Scheduler*    iHighPriority;                    // Pointer to a higher priority scheduler
+    SchedulerMF*    iHighPriority;                    // Pointer to a higher priority scheduler
 #endif  // _TASK_PRIORITY
 
 #ifdef _TASK_TIMECRITICAL
